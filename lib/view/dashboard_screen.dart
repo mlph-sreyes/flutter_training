@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../constants.dart' as Constants;
 import '../model/transaction.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DashboardScreen extends StatefulWidget {
   @override
@@ -12,11 +12,12 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int balance = 0;
 
-  @override
-  void initState() {
+  void loadTransactions() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     List<TransactionData> transactionsList = [];
     FirebaseFirestore.instance
-        .collection(Constants.COLLECTION_TRANSCTION)
+        .collection(Constants.COLLECTION_TRANSACTION)
+        .where('userId', isEqualTo: prefs.getString(Constants.KEY_USER_ID))
         .orderBy('date', descending: true)
         .limit(5)
         .snapshots()
@@ -24,6 +25,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       transactionsList.clear();
       transactions.clear();
       snapshot.docs.forEach((element) {
+        int amount = int.parse(element.get('amount'));
+        print(balance);
+        if (element.get('type') == 'Cash In') {
+          balance += amount;
+        } else {
+          balance = balance - amount;
+        }
         transactionsList.add(TransactionData(
             date: element.get('date'),
             time: element.get('time'),
@@ -34,6 +42,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
       });
     });
+  }
+
+  @override
+  void initState() {
+    loadTransactions();
     super.initState();
   }
 
@@ -45,8 +58,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case 'View Saved Contact List':
         break;
       case 'Logout':
+        clearPrefs();
+        Navigator.pop(context);
         break;
     }
+  }
+
+  void clearPrefs() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setString(Constants.KEY_USER_ID, '');
+    prefs.setBool(Constants.KEY_IS_LOGGED_IN, false);
   }
 
   List<TransactionData> transactions = [];

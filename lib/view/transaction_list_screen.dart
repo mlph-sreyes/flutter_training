@@ -16,7 +16,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   void initState() {
     List<TransactionData> transactionsList = [];
     FirebaseFirestore.instance
-        .collection(Constants.COLLECTION_TRANSCTION)
+        .collection(Constants.COLLECTION_TRANSACTION)
         .orderBy('date', descending: true)
         .snapshots()
         .listen((snapshot) {

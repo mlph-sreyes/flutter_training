@@ -5,6 +5,7 @@ import 'package:select_dialog/select_dialog.dart';
 import 'package:toast/toast.dart';
 import '../model/user.dart';
 import '../constants.dart' as Constants;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class TransactionScreen extends StatefulWidget {
   @override
@@ -17,8 +18,9 @@ class _TransactionScreenState extends State<TransactionScreen> {
   TextEditingController descController = new TextEditingController();
 
   List<User> users = [];
-  @override
-  void initState() {
+
+  void loadUsers() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     List<User> usersList = [];
     FirebaseFirestore.instance
         .collection(Constants.COLLECTION_USER)
@@ -27,22 +29,28 @@ class _TransactionScreenState extends State<TransactionScreen> {
         .listen((snapshot) {
       usersList.clear();
       snapshot.docs.forEach((element) {
-        print(element.id);
-        usersList.add(User(
-            id: element.id,
-            firstName: element.get('firstName'),
-            lastName: element.get('lastName'),
-            username: element.get('username'),
-            email: element.get('email')));
-        setState(() {
-          users = usersList;
-        });
+        if (element.id != prefs.getString(Constants.KEY_USER_ID)) {
+          usersList.add(User(
+              id: element.id,
+              firstName: element.get('firstName'),
+              lastName: element.get('lastName'),
+              username: element.get('username'),
+              email: element.get('email')));
+        }
+      });
+      setState(() {
+        users = usersList;
       });
     });
+  }
+
+  @override
+  void initState() {
+    loadUsers();
     super.initState();
   }
 
-  String type;
+  String type = '';
   User selectedContact;
 
   @override
@@ -135,16 +143,19 @@ class _TransactionScreenState extends State<TransactionScreen> {
   }
 
   void addTransaction(BuildContext context) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     CollectionReference transactions =
-        FirebaseFirestore.instance.collection(Constants.COLLECTION_TRANSCTION);
+        FirebaseFirestore.instance.collection(Constants.COLLECTION_TRANSACTION);
 
-    Map addTransactionMap = {
+    Map<String, dynamic> addTransactionMap = {
       'description': descController.text,
       'amount': amountController.text,
       'date': DateFormat.yMMMMd('en_US').format(DateTime.now()),
-      'time': DateFormat.jm().format(DateTime.now())
+      'time': DateFormat.jm().format(DateTime.now()),
+      'type': type,
+      'userId': prefs.getString(Constants.KEY_USER_ID)
     };
-
+    print(addTransactionMap);
     if (type == 'Payment') {
       addTransactionMap['contactId'] = selectedContact.id;
     }

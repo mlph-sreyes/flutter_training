@@ -79,7 +79,8 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void login() {
+  void login() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -107,7 +108,11 @@ class _LoginScreenState extends State<LoginScreen> {
         .then((value) => {
               Navigator.pop(context),
               if (value.docs.first != null)
-                {Navigator.pushNamed(context, Constants.ROUTE_DASHBOARD)}
+                {
+                  prefs.setString(Constants.KEY_USER_ID, value.docs.first.id),
+                  print(prefs.getString(Constants.KEY_USER_ID)),
+                  {Navigator.pushNamed(context, Constants.ROUTE_DASHBOARD)}
+                }
               else
                 {
                   Toast.show("Invalid login credentials", context,
