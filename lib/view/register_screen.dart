@@ -40,7 +40,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final _formKey = GlobalKey<FormState>();
     return Scaffold(
       appBar: AppBar(
-        title: Text('Register Account'),
+        title: Text('Create Account'),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -50,7 +50,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   registrationTextFormField(
-                      'Username', usernameController, false, (value) {
+                      'USERNAME', usernameController, false, (value) {
                     if (value.isEmpty) {
                       return 'Please enter some text';
                     }
