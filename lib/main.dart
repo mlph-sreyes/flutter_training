@@ -4,6 +4,7 @@ import 'package:flutter_training/view/login_screen.dart';
 import 'package:flutter_training/view/register_screen.dart';
 import 'package:flutter_training/view/transaction_list_screen.dart';
 import 'package:flutter_training/view/transaction_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'constants.dart' as Constants;
 
 // Import the firebase_core plugin
@@ -39,14 +40,28 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  String initialRoute = Constants.ROUTE_LOGIN;
+  void getIsLoggedIn() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool loggedIn = prefs.getBool(Constants.KEY_IS_LOGGED_IN);
+    print(loggedIn);
+    if (loggedIn) {
+      setState(() {
+        initialRoute = Constants.ROUTE_DASHBOARD;
+      });
+    }
+  }
+
   @override
   void initState() {
     initializeFlutterFire();
+    getIsLoggedIn();
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+    print('build $initialRoute');
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
@@ -65,7 +80,7 @@ class _MyAppState extends State<MyApp> {
         // closer together (more dense) than on mobile platforms.
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      initialRoute: Constants.ROUTE_LOGIN,
+      initialRoute: initialRoute,
       routes: {
         Constants.ROUTE_LOGIN: (context) => LoginScreen(),
         Constants.ROUTE_REGISTER: (context) => RegisterScreen(),

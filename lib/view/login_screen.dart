@@ -13,6 +13,7 @@ class _LoginScreenState extends State<LoginScreen> {
   TextEditingController usernameController = new TextEditingController();
 
   TextEditingController passwordController = new TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -101,15 +102,16 @@ class _LoginScreenState extends State<LoginScreen> {
       },
     );
     FirebaseFirestore.instance
-        .collection('user')
+        .collection(Constants.COLLECTION_USER)
         .where('username', isEqualTo: usernameController.text)
         .where('password', isEqualTo: passwordController.text)
         .get()
         .then((value) => {
               Navigator.pop(context),
-              if (value.docs.first != null)
+              if (!value.docs.first.exists)
                 {
                   prefs.setString(Constants.KEY_USER_ID, value.docs.first.id),
+                  prefs.setBool(Constants.KEY_IS_LOGGED_IN, true),
                   print(prefs.getString(Constants.KEY_USER_ID)),
                   {Navigator.pushNamed(context, Constants.ROUTE_DASHBOARD)}
                 }

@@ -19,8 +19,31 @@ class _TransactionScreenState extends State<TransactionScreen> {
 
   List<User> users = [];
 
+  int balance = 0;
+
+  void loadTransactions() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    FirebaseFirestore.instance
+        .collection(Constants.COLLECTION_TRANSACTION)
+        .where('userId', isEqualTo: prefs.getString(Constants.KEY_USER_ID))
+        .orderBy('datetime', descending: true)
+        .snapshots()
+        .listen((snapshot) {
+      snapshot.docs.forEach((element) {
+        int amount = int.parse(element.get('amount'));
+        if (element.get('type') == 'Cash In') {
+          balance += amount;
+        } else {
+          balance = balance - amount;
+        }
+      });
+    });
+  }
+
+  String userId = '';
   void loadUsers() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    userId = prefs.getString(Constants.KEY_USER_ID);
     List<User> usersList = [];
     FirebaseFirestore.instance
         .collection(Constants.COLLECTION_USER)
@@ -29,7 +52,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
         .listen((snapshot) {
       usersList.clear();
       snapshot.docs.forEach((element) {
-        if (element.id != prefs.getString(Constants.KEY_USER_ID)) {
+        if (element.id != userId) {
           usersList.add(User(
               id: element.id,
               firstName: element.get('firstName'),
@@ -47,18 +70,19 @@ class _TransactionScreenState extends State<TransactionScreen> {
   @override
   void initState() {
     loadUsers();
+    loadTransactions();
     super.initState();
   }
 
-  String type = '';
+  String transactionType = '';
   User selectedContact;
 
   @override
   Widget build(BuildContext context) {
     data = ModalRoute.of(context).settings.arguments;
     String title = '';
-    type = data['type'];
-    if (type == 'Payment') {
+    transactionType = data['type'].toString();
+    if (transactionType == 'Payment') {
       title = "Payment";
     } else {
       title = "Cash In";
@@ -98,6 +122,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                     'Transaction Date: ${DateFormat.yMMMMd('en_US').add_jm().format(DateTime.now())}')),
             addUserSelectedText(),
             addUserSelection(),
+            addSaveContactCheckBox(),
             RaisedButton(
               onPressed: () {
                 addTransaction(context);
@@ -111,7 +136,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
   }
 
   Widget addUserSelectedText() {
-    if (type == 'Payment') {
+    if (transactionType == 'Payment') {
       if (selectedContact == null) {
         return Text('');
       } else {
@@ -121,8 +146,30 @@ class _TransactionScreenState extends State<TransactionScreen> {
     return Container();
   }
 
+  bool saveUser = false;
+  Widget addSaveContactCheckBox() {
+    if (transactionType == 'Payment') {
+      return Center(
+          child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          new Checkbox(
+              value: saveUser,
+              onChanged: (bool newValue) {
+                setState(() {
+                  saveUser = newValue;
+                });
+              }),
+          Text('Save Contact')
+        ],
+      ));
+    } else {
+      return Container();
+    }
+  }
+
   Widget addUserSelection() {
-    if (type == 'Payment') {
+    if (transactionType == 'Payment') {
       return RaisedButton(
         onPressed: () {
           SelectDialog.showModal<User>(
@@ -146,27 +193,106 @@ class _TransactionScreenState extends State<TransactionScreen> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     CollectionReference transactions =
         FirebaseFirestore.instance.collection(Constants.COLLECTION_TRANSACTION);
-
-    Map<String, dynamic> addTransactionMap = {
-      'description': descController.text,
-      'amount': amountController.text,
-      'date': DateFormat.yMMMMd('en_US').format(DateTime.now()),
-      'time': DateFormat.jm().format(DateTime.now()),
-      'type': type,
-      'userId': prefs.getString(Constants.KEY_USER_ID)
-    };
-    print(addTransactionMap);
-    if (type == 'Payment') {
-      addTransactionMap['contactId'] = selectedContact.id;
+    if (balance < int.parse(amountController.text) &&
+        transactionType == 'Payment') {
+      Toast.show("Insufficient Funds", context,
+          duration: Toast.LENGTH_SHORT, gravity: Toast.BOTTOM);
+    } else {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Dialog(
+            child: new Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                    padding: EdgeInsets.symmetric(vertical: 15, horizontal: 15),
+                    child: new CircularProgressIndicator()),
+                Container(
+                    padding: EdgeInsets.symmetric(vertical: 15, horizontal: 15),
+                    child: new Text("Loading")),
+              ],
+            ),
+          );
+        },
+      );
+      Map<String, String> addTransactionMap = {
+        'description': descController.text,
+        'amount': amountController.text,
+        'datetime': DateFormat.MMMd('en_US').format(DateTime.now()) +
+            ' ' +
+            DateFormat.jm().format(DateTime.now()),
+        'type': transactionType,
+        'userId': prefs.getString(Constants.KEY_USER_ID)
+      };
+      if (transactionType == 'Payment') {
+        addTransactionMap['selectedContactId'] = selectedContact.id;
+        addTransactionMap['selectedContactName'] =
+            selectedContact.firstName + " " + selectedContact.lastName;
+      }
+      transactions
+          .add(addTransactionMap)
+          .then((value) => {
+                if (transactionType == 'Payment')
+                  {
+                    FirebaseFirestore.instance
+                        .collection(Constants.COLLECTION_SELECTED_CONTACT)
+                        .where('userId', isEqualTo: userId)
+                        .where('contactId', isEqualTo: selectedContact.id)
+                        .get()
+                        .then((value) => {
+                              if (value.docs.first.exists)
+                                {
+                                  Navigator.pop(context),
+                                  Toast.show("Payment Posted", context,
+                                      duration: Toast.LENGTH_SHORT,
+                                      gravity: Toast.BOTTOM),
+                                  Navigator.pop(context),
+                                }
+                              else
+                                {
+                                  createSavedContact(),
+                                },
+                            })
+                        .catchError((error) => {
+                              print('create saved contact error'),
+                              createSavedContact(),
+                            }),
+                  }
+                else
+                  {
+                    Navigator.pop(context),
+                    Toast.show("Payment Posted", context,
+                        duration: Toast.LENGTH_SHORT, gravity: Toast.BOTTOM),
+                    Navigator.pop(context),
+                  }
+              })
+          .catchError((error) => {
+                Toast.show("An error occured", context,
+                    duration: Toast.LENGTH_SHORT, gravity: Toast.BOTTOM)
+              });
     }
-    transactions
-        .add(addTransactionMap)
+  }
+
+  void createSavedContact() {
+    print('create saved contact');
+    Map<String, String> addSavedUserMap = {};
+    addSavedUserMap['userId'] = userId;
+    addSavedUserMap['contactFirstName'] = selectedContact.firstName;
+    addSavedUserMap['contactLastName'] = selectedContact.lastName;
+    addSavedUserMap['contactId'] = selectedContact.id;
+    FirebaseFirestore.instance
+        .collection(Constants.COLLECTION_SELECTED_CONTACT)
+        .add(addSavedUserMap)
         .then((value) => {
+              Navigator.pop(context),
               Toast.show("Payment Posted", context,
                   duration: Toast.LENGTH_SHORT, gravity: Toast.BOTTOM),
-              Navigator.pop(context)
+              Navigator.pop(context),
             })
         .catchError((error) => {
+              print('$error'),
               Toast.show("An error occured", context,
                   duration: Toast.LENGTH_SHORT, gravity: Toast.BOTTOM)
             });

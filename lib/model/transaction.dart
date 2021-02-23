@@ -1,11 +1,17 @@
 class TransactionData {
   String amount;
-  String date;
-  String time;
+  String datetime;
   String desc;
   String userId;
   String type;
-
+  String selectedContactId;
+  String selectedContactName;
   TransactionData(
-      {this.amount, this.date, this.time, this.desc, this.userId, this.type});
+      {this.amount,
+      this.datetime,
+      this.desc,
+      this.userId,
+      this.type,
+      this.selectedContactId,
+      this.selectedContactName});
 }
