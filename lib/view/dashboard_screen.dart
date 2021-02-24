@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../constants.dart' as Constants;
 import '../model/transaction.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../util/transaction_card_builder.dart';
 
 class DashboardScreen extends StatefulWidget {
   @override
@@ -11,52 +12,76 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int balance = 0;
+  String currentUserId = '';
 
   void loadTransactions() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
     List<TransactionData> transactionsList = [];
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    transactionsList.clear();
+    transactions.clear();
+    currentUserId = prefs.getString(Constants.KEY_USER_ID);
     FirebaseFirestore.instance
         .collection(Constants.COLLECTION_TRANSACTION)
-        .where('userId', isEqualTo: prefs.getString(Constants.KEY_USER_ID))
+        .where('senderId', isEqualTo: currentUserId)
         .orderBy('datetime', descending: true)
         .snapshots()
         .listen((snapshot) {
-      balance = 0;
-      transactionsList.clear();
-      transactions.clear();
       snapshot.docs.forEach((element) {
-        int amount = int.parse(element.get('amount'));
-        if (element.get('type') == 'Cash In') {
-          balance += amount;
+        if (element.get('type') == 'Payment') {
+          transactionsList.add(TransactionData(
+              datetime: element.get('datetime'),
+              amount: element.get('amount'),
+              desc: element.get('description'),
+              type: element.get('type'),
+              receiverId: element.get('receiverId'),
+              selectedContactName: element.get('selectedContactName')));
         } else {
-          balance = balance - amount;
+          transactionsList.add(TransactionData(
+              datetime: element.get('datetime'),
+              amount: element.get('amount'),
+              desc: element.get('description'),
+              type: element.get('type'),
+              receiverId: element.get('receiverId')));
         }
-        if (transactionsList.length < 5) {
-          if (element.get('type') == 'Payment') {
-            transactionsList.add(TransactionData(
-                datetime: element.get('datetime'),
-                amount: element.get('amount'),
-                desc: element.get('description'),
-                type: element.get('type'),
-                selectedContactId: element.get('selectedContactId'),
-                selectedContactName: element.get('selectedContactName')));
-          } else {
-            transactionsList.add(TransactionData(
-                datetime: element.get('datetime'),
-                amount: element.get('amount'),
-                desc: element.get('description'),
-                type: element.get('type')));
-          }
+        balance -= int.parse(element.get('amount'));
+      });
+    });
+    FirebaseFirestore.instance
+        .collection(Constants.COLLECTION_TRANSACTION)
+        .where('receiverId', isEqualTo: prefs.getString(Constants.KEY_USER_ID))
+        .orderBy('datetime', descending: true)
+        .snapshots()
+        .listen((snapshot) {
+      snapshot.docs.forEach((element) {
+        if (element.get('type') == 'Payment') {
+          transactionsList.add(TransactionData(
+              datetime: element.get('datetime'),
+              amount: element.get('amount'),
+              desc: element.get('description'),
+              type: element.get('type'),
+              receiverId: element.get('receiverId'),
+              senderName: element.get('senderName'),
+              selectedContactName: element.get('selectedContactName')));
+        } else {
+          transactionsList.add(TransactionData(
+              datetime: element.get('datetime'),
+              amount: element.get('amount'),
+              desc: element.get('description'),
+              type: element.get('type'),
+              receiverId: element.get('receiverId')));
         }
+        balance += int.parse(element.get('amount'));
       });
-      setState(() {
-        transactions = transactionsList;
-      });
+    });
+    setState(() {
+      transactionsList.sort((a, b) => a.datetime.compareTo(b.datetime));
+      transactions = transactionsList;
     });
   }
 
   @override
   void initState() {
+    loadTransactions();
     super.initState();
   }
 
@@ -84,7 +109,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<TransactionData> transactions = [];
   @override
   Widget build(BuildContext context) {
-    loadTransactions();
     return Scaffold(
         appBar: AppBar(
           title: Text('Dashboard'),
@@ -147,129 +171,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Container(
                     child: Column(
                   children: transactions.map((transaction) {
-                    return createTransactionItem(transaction);
+                    return createTransactionItem(transaction, currentUserId);
                   }).toList(),
                 ))
               ],
             ),
           ),
         ));
-  }
-
-  Widget createTransactionItem(TransactionData transaction) {
-    if (transaction.type == 'Cash In') {
-      return drawCashInTransaction(transaction);
-    } else {
-      return drawPaymentTransaction(transaction);
-    }
-  }
-
-  Widget drawPaymentTransaction(TransactionData transaction) {
-    return Card(
-      child: Row(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                  height: 50.0,
-                  child: Container(
-                    padding: EdgeInsets.fromLTRB(15, 15, 0, 0),
-                    child: Text('${transaction.datetime}',
-                        style: TextStyle(
-                          fontSize: 16.0,
-                        )),
-                  )),
-              SizedBox(
-                height: 30.0,
-                child: Container(
-                    padding: EdgeInsets.fromLTRB(15, 0, 0, 15),
-                    child: Text('Paid to ' + transaction.selectedContactName,
-                        style: TextStyle(fontSize: 14.0))),
-              )
-            ],
-          ),
-          Expanded(
-              child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              SizedBox(
-                  height: 50.0,
-                  child: Container(
-                    padding: EdgeInsets.fromLTRB(0, 15, 15, 0),
-                    child: Text('- Php ${transaction.amount}',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18.0,
-                            color: Colors.red)),
-                  )),
-              SizedBox(
-                height: 30.0,
-                child: Container(
-                    padding: EdgeInsets.fromLTRB(0, 0, 15, 15),
-                    child: Text(transaction.desc,
-                        style: TextStyle(fontSize: 12.0))),
-              )
-            ],
-          ))
-        ],
-      ),
-    );
-  }
-
-  Widget drawCashInTransaction(TransactionData transaction) {
-    return Card(
-      child: Row(
-        children: [
-          Expanded(
-              child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                  height: 50.0,
-                  child: Container(
-                    padding: EdgeInsets.fromLTRB(15, 15, 0, 0),
-                    child: Text('${transaction.datetime}',
-                        style: TextStyle(
-                          fontSize: 16.0,
-                        )),
-                  )),
-              SizedBox(
-                height: 30.0,
-                child: Container(
-                    padding: EdgeInsets.fromLTRB(15, 0, 0, 15),
-                    child: Text(transaction.type,
-                        style: TextStyle(
-                          fontSize: 14.0,
-                        ))),
-              )
-            ],
-          )),
-          Expanded(
-              child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              SizedBox(
-                  height: 50.0,
-                  child: Container(
-                    padding: EdgeInsets.fromLTRB(0, 15, 15, 0),
-                    child: Text('+ Php ${transaction.amount}',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18.0,
-                            color: Colors.green)),
-                  )),
-              SizedBox(
-                height: 30.0,
-                child: Container(
-                    padding: EdgeInsets.fromLTRB(0, 0, 15, 15),
-                    child: Text(transaction.desc,
-                        style: TextStyle(fontSize: 12.0))),
-              )
-            ],
-          ))
-        ],
-      ),
-    );
   }
 }

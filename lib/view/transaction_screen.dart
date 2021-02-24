@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:select_dialog/select_dialog.dart';
 import 'package:toast/toast.dart';
 import '../model/user.dart';
+import '../model/transaction.dart';
 import '../constants.dart' as Constants;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -20,22 +21,66 @@ class _TransactionScreenState extends State<TransactionScreen> {
   List<User> users = [];
 
   int balance = 0;
+  String currentUserId = '';
+  String curretnUserName = '';
 
   void loadTransactions() async {
+    List<TransactionData> transactionsList = [];
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    transactionsList.clear();
+    currentUserId = prefs.getString(Constants.KEY_USER_ID);
+    curretnUserName = prefs.getString(Constants.KEY_USER_NAME);
     FirebaseFirestore.instance
         .collection(Constants.COLLECTION_TRANSACTION)
-        .where('userId', isEqualTo: prefs.getString(Constants.KEY_USER_ID))
+        .where('senderId', isEqualTo: currentUserId)
         .orderBy('datetime', descending: true)
         .snapshots()
         .listen((snapshot) {
       snapshot.docs.forEach((element) {
-        int amount = int.parse(element.get('amount'));
-        if (element.get('type') == 'Cash In') {
-          balance += amount;
+        if (element.get('type') == 'Payment') {
+          transactionsList.add(TransactionData(
+              datetime: element.get('datetime'),
+              amount: element.get('amount'),
+              desc: element.get('description'),
+              type: element.get('type'),
+              receiverId: element.get('receiverId'),
+              selectedContactName: element.get('selectedContactName')));
         } else {
-          balance = balance - amount;
+          transactionsList.add(TransactionData(
+              datetime: element.get('datetime'),
+              amount: element.get('amount'),
+              desc: element.get('description'),
+              type: element.get('type'),
+              receiverId: element.get('receiverId')));
         }
+        balance -= int.parse(element.get('amount'));
+      });
+    });
+    FirebaseFirestore.instance
+        .collection(Constants.COLLECTION_TRANSACTION)
+        .where('receiverId', isEqualTo: prefs.getString(Constants.KEY_USER_ID))
+        .orderBy('datetime', descending: true)
+        .snapshots()
+        .listen((snapshot) {
+      snapshot.docs.forEach((element) {
+        if (element.get('type') == 'Payment') {
+          transactionsList.add(TransactionData(
+              datetime: element.get('datetime'),
+              amount: element.get('amount'),
+              desc: element.get('description'),
+              type: element.get('type'),
+              receiverId: element.get('receiverId'),
+              senderName: element.get('senderName'),
+              selectedContactName: element.get('selectedContactName')));
+        } else {
+          transactionsList.add(TransactionData(
+              datetime: element.get('datetime'),
+              amount: element.get('amount'),
+              desc: element.get('description'),
+              type: element.get('type'),
+              receiverId: element.get('receiverId')));
+        }
+        balance += int.parse(element.get('amount'));
       });
     });
   }
@@ -230,12 +275,16 @@ class _TransactionScreenState extends State<TransactionScreen> {
             ' ' +
             DateFormat.jm().format(DateTime.now()),
         'type': transactionType,
-        'userId': prefs.getString(Constants.KEY_USER_ID)
       };
       if (transactionType == 'Payment') {
-        addTransactionMap['selectedContactId'] = selectedContact.id;
+        addTransactionMap['receiverId'] = selectedContact.id;
+        addTransactionMap['senderId'] = prefs.getString(Constants.KEY_USER_ID);
+        addTransactionMap['senderName'] = curretnUserName;
         addTransactionMap['selectedContactName'] =
             selectedContact.firstName + " " + selectedContact.lastName;
+      } else {
+        addTransactionMap['receiverId'] =
+            prefs.getString(Constants.KEY_USER_ID);
       }
       transactions
           .add(addTransactionMap)

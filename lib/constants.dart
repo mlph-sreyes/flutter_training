@@ -10,5 +10,6 @@ const String COLLECTION_TRANSACTION = 'transaction';
 const String COLLECTION_SELECTED_CONTACT = 'selectedContact';
 
 const String KEY_USER_ID = 'userId';
+const String KEY_USER_NAME = 'user_name';
 const String KEY_IS_LOGGED_IN = 'loggedIn';
 const String KEY_BALANCE = 'balance';
