@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../constants.dart' as Constants;
 import '../model/transaction.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class TransactionListScreen extends StatefulWidget {
   @override
@@ -12,11 +13,12 @@ class TransactionListScreen extends StatefulWidget {
 class _TransactionListScreenState extends State<TransactionListScreen> {
   List<TransactionData> transactions = [];
 
-  @override
-  void initState() {
+  void loadTransactions() async {
     List<TransactionData> transactionsList = [];
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     FirebaseFirestore.instance
         .collection(Constants.COLLECTION_TRANSACTION)
+        .where('userId', isEqualTo: prefs.getString(Constants.KEY_USER_ID))
         .orderBy('datetime', descending: true)
         .snapshots()
         .listen((snapshot) {
@@ -43,6 +45,11 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         });
       });
     });
+  }
+
+  @override
+  void initState() {
+    loadTransactions();
     super.initState();
   }
 

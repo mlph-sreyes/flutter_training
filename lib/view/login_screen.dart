@@ -108,7 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
         .get()
         .then((value) => {
               Navigator.pop(context),
-              if (!value.docs.first.exists)
+              if (value.docs.first != null)
                 {
                   prefs.setString(Constants.KEY_USER_ID, value.docs.first.id),
                   prefs.setBool(Constants.KEY_IS_LOGGED_IN, true),

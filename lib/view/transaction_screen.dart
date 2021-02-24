@@ -82,6 +82,12 @@ class _TransactionScreenState extends State<TransactionScreen> {
     data = ModalRoute.of(context).settings.arguments;
     String title = '';
     transactionType = data['type'].toString();
+    if (data['selectedUserId'] != null) {
+      selectedContact = User(
+          id: data['selectedUserId'],
+          firstName: data['selectedUserFirstName'],
+          lastName: data['selectedUserLastName']);
+    }
     if (transactionType == 'Payment') {
       title = "Payment";
     } else {

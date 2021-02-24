@@ -66,6 +66,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Navigator.pushNamed(context, Constants.ROUTE_TRANSACTIONS_LIST);
         break;
       case 'View Saved Contact List':
+        Navigator.pushNamed(context, Constants.ROUTE_CONTACT_LIST);
         break;
       case 'Logout':
         clearPrefs();

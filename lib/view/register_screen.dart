@@ -50,7 +50,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   registrationTextFormField(
-                      'USERNAME', usernameController, false, (value) {
+                      'Username', usernameController, false, (value) {
                     if (value.isEmpty) {
                       return 'Please enter some text';
                     }
