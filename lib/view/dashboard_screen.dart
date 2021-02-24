@@ -145,7 +145,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Expanded(
                         child: Container(
                             padding: EdgeInsets.symmetric(
-                                vertical: 15, horizontal: 15),
+                                vertical: 4, horizontal: 10),
                             child: RaisedButton.icon(
                                 onPressed: () {
                                   Navigator.pushNamed(
@@ -157,7 +157,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Expanded(
                         child: Container(
                             padding: EdgeInsets.symmetric(
-                                vertical: 15, horizontal: 15),
+                                vertical: 4, horizontal: 10),
                             child: RaisedButton.icon(
                                 onPressed: () {
                                   Navigator.pushNamed(
@@ -165,9 +165,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       arguments: {'type': 'Payment'});
                                 },
                                 icon: Icon(Icons.payment),
-                                label: Text('Pay'))))
+                                label: Text('Pay')))),
                   ],
                 ),
+                Row(children: [
+                  Expanded(
+                      child: Container(
+                          padding:
+                              EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                          child: RaisedButton.icon(
+                              onPressed: () {},
+                              icon: Icon(Icons.arrow_upward),
+                              label: Text('Send')))),
+                  Expanded(
+                      child: Container(
+                          padding:
+                              EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                          child: RaisedButton.icon(
+                              onPressed: () {},
+                              icon: Icon(Icons.arrow_downward),
+                              label: Text('Receive'))))
+                ]),
                 Container(
                     child: Column(
                   children: transactions.map((transaction) {

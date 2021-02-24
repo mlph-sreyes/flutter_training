@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:toast/toast.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../constants.dart' as Constants;
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -159,6 +161,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
       },
     );
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     CollectionReference users = FirebaseFirestore.instance.collection('user');
     users
         .add({
@@ -169,10 +172,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
           'email': emailController.text
         })
         .then((value) => {
-              Navigator.pop(context),
+              print(value.id),
+              prefs.setString(Constants.KEY_USER_ID, value.id),
+              prefs.setBool(Constants.KEY_IS_LOGGED_IN, true),
+              prefs.setString(Constants.KEY_USER_NAME,
+                  (firstNameController.text + " " + lastNameController.text)),
               Toast.show("User Registered", context,
                   duration: Toast.LENGTH_SHORT, gravity: Toast.BOTTOM),
-              Navigator.pop(context)
+              Navigator.pop(context),
+              Navigator.pushNamed(context, Constants.ROUTE_DASHBOARD)
             })
         .catchError((error) => {
               Toast.show("An error occured", context,
