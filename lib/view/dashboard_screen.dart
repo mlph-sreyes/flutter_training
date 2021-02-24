@@ -13,6 +13,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int balance = 0;
   String currentUserId = '';
+  String currentUserName = '';
 
   void loadTransactions() async {
     List<TransactionData> transactionsList = [];
@@ -20,6 +21,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     transactionsList.clear();
     transactions.clear();
     currentUserId = prefs.getString(Constants.KEY_USER_ID);
+    currentUserName = prefs.getString(Constants.KEY_USER_NAME);
     FirebaseFirestore.instance
         .collection(Constants.COLLECTION_TRANSACTION)
         .where('senderId', isEqualTo: currentUserId)
@@ -44,6 +46,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               receiverId: element.get('receiverId')));
         }
         balance -= int.parse(element.get('amount'));
+      });
+      setState(() {
+        transactionsList.sort((a, b) => a.datetime.compareTo(b.datetime));
+        transactions = transactionsList;
       });
     });
     FirebaseFirestore.instance
@@ -72,10 +78,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
         balance += int.parse(element.get('amount'));
       });
-    });
-    setState(() {
-      transactionsList.sort((a, b) => a.datetime.compareTo(b.datetime));
-      transactions = transactionsList;
+      setState(() {
+        transactionsList.sort((a, b) => a.datetime.compareTo(b.datetime));
+        transactions = transactionsList;
+      });
     });
   }
 
@@ -174,17 +180,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           padding:
                               EdgeInsets.symmetric(vertical: 4, horizontal: 10),
                           child: RaisedButton.icon(
-                              onPressed: () {},
-                              icon: Icon(Icons.arrow_upward),
-                              label: Text('Send')))),
+                              onPressed: () {
+                                Navigator.pushNamed(
+                                    context, Constants.ROUTE_QR_VIEW,
+                                    arguments: {
+                                      'currentUserId': currentUserId,
+                                      'currentUserName': currentUserName
+                                    });
+                              },
+                              icon: Icon(Icons.arrow_downward),
+                              label: Text('Receive')))),
                   Expanded(
                       child: Container(
                           padding:
                               EdgeInsets.symmetric(vertical: 4, horizontal: 10),
                           child: RaisedButton.icon(
                               onPressed: () {},
-                              icon: Icon(Icons.arrow_downward),
-                              label: Text('Receive'))))
+                              icon: Icon(Icons.arrow_upward),
+                              label: Text('Send')))),
                 ]),
                 Container(
                     child: Column(

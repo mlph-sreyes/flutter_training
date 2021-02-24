@@ -45,6 +45,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
               receiverId: element.get('receiverId')));
         }
       });
+      setState(() {
+        transactionsList.sort((a, b) => a.datetime.compareTo(b.datetime));
+        transactions = transactionsList;
+      });
     });
     FirebaseFirestore.instance
         .collection(Constants.COLLECTION_TRANSACTION)
@@ -71,10 +75,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
               receiverId: element.get('receiverId')));
         }
       });
-    });
-    setState(() {
-      transactionsList.sort((a, b) => a.datetime.compareTo(b.datetime));
-      transactions = transactionsList;
+      setState(() {
+        transactionsList.sort((a, b) => a.datetime.compareTo(b.datetime));
+        transactions = transactionsList;
+      });
     });
   }
 

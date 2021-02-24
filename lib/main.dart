@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_training/view/dashboard_screen.dart';
 import 'package:flutter_training/view/login_screen.dart';
+import 'package:flutter_training/view/qr_screen.dart';
 import 'package:flutter_training/view/register_screen.dart';
 import 'package:flutter_training/view/saved_contact_screen.dart';
 import 'package:flutter_training/view/transaction_list_screen.dart';
@@ -88,7 +89,8 @@ class _MyAppState extends State<MyApp> {
         Constants.ROUTE_DASHBOARD: (context) => DashboardScreen(),
         Constants.ROUTE_TRANSACTION: (context) => TransactionScreen(),
         Constants.ROUTE_TRANSACTIONS_LIST: (context) => TransactionListScreen(),
-        Constants.ROUTE_CONTACT_LIST: (context) => SavedContactScreen()
+        Constants.ROUTE_CONTACT_LIST: (context) => SavedContactScreen(),
+        Constants.ROUTE_QR_VIEW: (context) => QrScreen()
       },
     );
   }

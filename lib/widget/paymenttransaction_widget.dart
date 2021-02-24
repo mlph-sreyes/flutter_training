@@ -22,7 +22,7 @@ class PaymentTransactionWidget extends StatelessWidget {
       amountText = Text('- Php ${transaction.amount}',
           style: TextStyle(
               fontWeight: FontWeight.bold, fontSize: 18.0, color: Colors.red));
-      paymentInfo = 'Paid to ' + transaction.selectedContactName;
+      paymentInfo = 'Sent to ' + transaction.selectedContactName;
     }
     return Card(
       child: Row(
