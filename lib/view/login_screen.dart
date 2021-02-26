@@ -112,11 +112,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 {
                   prefs.setString(Constants.KEY_USER_ID, value.docs.first.id),
                   prefs.setBool(Constants.KEY_IS_LOGGED_IN, true),
-                  prefs.setString(
-                      Constants.KEY_USER_NAME,
-                      (value.docs.first.get('firstName') +
-                          " " +
-                          value.docs.first.get('lastName'))),
+                  prefs.setString(Constants.KEY_USER_FNAME,
+                      value.docs.first.get('firstName')),
+                  prefs.setString(Constants.KEY_USER_LNAME,
+                      value.docs.first.get('lastName')),
                   {Navigator.pushNamed(context, Constants.ROUTE_DASHBOARD)}
                 }
               else

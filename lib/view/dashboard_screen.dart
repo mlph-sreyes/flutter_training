@@ -4,6 +4,9 @@ import '../constants.dart' as Constants;
 import '../model/transaction.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../util/transaction_card_builder.dart';
+import 'package:qrscan/qrscan.dart' as scanner;
+import 'package:permission_handler/permission_handler.dart';
+import 'package:toast/toast.dart';
 
 class DashboardScreen extends StatefulWidget {
   @override
@@ -13,7 +16,8 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int balance = 0;
   String currentUserId = '';
-  String currentUserName = '';
+  String currentUserFName = '';
+  String currentUserLName = '';
 
   void loadTransactions() async {
     List<TransactionData> transactionsList = [];
@@ -21,7 +25,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     transactionsList.clear();
     transactions.clear();
     currentUserId = prefs.getString(Constants.KEY_USER_ID);
-    currentUserName = prefs.getString(Constants.KEY_USER_NAME);
+    currentUserFName = prefs.getString(Constants.KEY_USER_FNAME);
+    currentUserLName = prefs.getString(Constants.KEY_USER_LNAME);
     FirebaseFirestore.instance
         .collection(Constants.COLLECTION_TRANSACTION)
         .where('senderId', isEqualTo: currentUserId)
@@ -185,7 +190,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     context, Constants.ROUTE_QR_VIEW,
                                     arguments: {
                                       'currentUserId': currentUserId,
-                                      'currentUserName': currentUserName
+                                      'currentUserFName': currentUserFName,
+                                      'currentUserLName': currentUserLName
                                     });
                               },
                               icon: Icon(Icons.arrow_downward),
@@ -195,7 +201,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           padding:
                               EdgeInsets.symmetric(vertical: 4, horizontal: 10),
                           child: RaisedButton.icon(
-                              onPressed: () {},
+                              onPressed: () {
+                                showScanner();
+                              },
                               icon: Icon(Icons.arrow_upward),
                               label: Text('Send')))),
                 ]),
@@ -209,5 +217,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
         ));
+  }
+
+  void showScanner() async {
+    if (await Permission.camera.request().isGranted) {
+      String cameraScanResult = await scanner.scan();
+
+      List<String> values = cameraScanResult.split(':');
+      Navigator.pushNamed(context, Constants.ROUTE_TRANSACTION, arguments: {
+        'type': 'Payment',
+        'selectedUserId': values[0],
+        'selectedUserFirstName': values[1],
+        'selectedUserLastName': values[2]
+      });
+    } else {
+      Map<Permission, PermissionStatus> status =
+          await [Permission.camera].request();
+    }
   }
 }

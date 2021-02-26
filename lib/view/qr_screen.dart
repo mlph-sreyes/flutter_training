@@ -4,13 +4,15 @@ import 'package:qr_flutter/qr_flutter.dart';
 class QrScreen extends StatelessWidget {
   Map data = {};
   String currentUserId;
-  String currentUserName;
+  String currentUserFName = '';
+  String currentUserLName = '';
 
   @override
   Widget build(BuildContext context) {
     data = ModalRoute.of(context).settings.arguments;
     currentUserId = data['currentUserId'].toString();
-    currentUserName = data['currentUserName'].toString();
+    currentUserFName = data['currentUserFName'].toString();
+    currentUserLName = data['currentUserLName'].toString();
     return Scaffold(
       appBar: AppBar(
         // Here we take the value from the MyHomePage object that was created by
@@ -39,12 +41,12 @@ class QrScreen extends StatelessWidget {
           children: <Widget>[
             Container(
               padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-              child: Text(currentUserName,
+              child: Text(currentUserFName + " " + currentUserLName,
                   style:
                       TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold)),
             ),
             QrImage(
-              data: currentUserId,
+              data: '$currentUserId:$currentUserFName:$currentUserLName',
               version: QrVersions.auto,
               size: 250.0,
             ),

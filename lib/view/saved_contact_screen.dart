@@ -45,7 +45,7 @@ class _SavedContactScreenState extends State<SavedContactScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text('Transactions List'),
+          title: Text('Saved Contacts List'),
         ),
         body: SingleChildScrollView(
           child: Container(

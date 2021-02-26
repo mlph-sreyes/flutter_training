@@ -172,11 +172,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
           'email': emailController.text
         })
         .then((value) => {
-              print(value.id),
               prefs.setString(Constants.KEY_USER_ID, value.id),
               prefs.setBool(Constants.KEY_IS_LOGGED_IN, true),
-              prefs.setString(Constants.KEY_USER_NAME,
-                  (firstNameController.text + " " + lastNameController.text)),
+              prefs.setString(
+                  Constants.KEY_USER_FNAME, firstNameController.text),
+              prefs.setString(
+                  Constants.KEY_USER_LNAME, lastNameController.text),
               Toast.show("User Registered", context,
                   duration: Toast.LENGTH_SHORT, gravity: Toast.BOTTOM),
               Navigator.pop(context),

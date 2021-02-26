@@ -22,14 +22,16 @@ class _TransactionScreenState extends State<TransactionScreen> {
 
   int balance = 0;
   String currentUserId = '';
-  String curretnUserName = '';
+  String currentUserFName = '';
+  String currentUserLName = '';
 
   void loadTransactions() async {
     List<TransactionData> transactionsList = [];
     SharedPreferences prefs = await SharedPreferences.getInstance();
     transactionsList.clear();
     currentUserId = prefs.getString(Constants.KEY_USER_ID);
-    curretnUserName = prefs.getString(Constants.KEY_USER_NAME);
+    currentUserFName = prefs.getString(Constants.KEY_USER_FNAME);
+    currentUserLName = prefs.getString(Constants.KEY_USER_LNAME);
     FirebaseFirestore.instance
         .collection(Constants.COLLECTION_TRANSACTION)
         .where('senderId', isEqualTo: currentUserId)
@@ -86,10 +88,11 @@ class _TransactionScreenState extends State<TransactionScreen> {
   }
 
   String userId = '';
+  List<User> usersList = [];
   void loadUsers() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     userId = prefs.getString(Constants.KEY_USER_ID);
-    List<User> usersList = [];
+    usersList.clear();
     FirebaseFirestore.instance
         .collection(Constants.COLLECTION_USER)
         .orderBy('firstName', descending: true)
@@ -279,7 +282,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
       if (transactionType == 'Payment') {
         addTransactionMap['receiverId'] = selectedContact.id;
         addTransactionMap['senderId'] = prefs.getString(Constants.KEY_USER_ID);
-        addTransactionMap['senderName'] = curretnUserName;
+        addTransactionMap['senderName'] =
+            currentUserFName + " " + currentUserLName;
         addTransactionMap['selectedContactName'] =
             selectedContact.firstName + " " + selectedContact.lastName;
       } else {
